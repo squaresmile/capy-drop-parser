@@ -281,9 +281,6 @@ def get_qp_right(image):
 
     qp_gained = get_qp_from_text(qp_gained_text)
     qp_total = get_qp_from_text(qp_total_text)
-    
-    if qp_total == 0:
-        raise Exception("Failed to extract QP right total from text returned by tesseract")
 
     return qp_gained, qp_total
 
