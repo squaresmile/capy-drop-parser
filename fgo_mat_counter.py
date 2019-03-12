@@ -247,6 +247,10 @@ def get_qp_from_text(text):
 def extract_text_from_image(image, file_name='pytesseract_input.png'):
     gray =  cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     _, qp_image = cv2.threshold(gray, 65, 255, cv2.THRESH_BINARY_INV)
+    
+    # return -1 if the image is all white
+    if cv2.countNonZero(qp_image) == np.prod(qp_image.shape):
+        return -1
 
     if (LABEL):
         cv2.imwrite(file_name, qp_image)
@@ -266,6 +270,22 @@ def get_qp(image):
 
     return qp_gained, qp_total
 
+def get_qp_right(image):
+    qp_gained_text = extract_text_from_image(image[435:430 + 47, 750:750 + 200], 'qp_right_gained_text.png')
+    logging.debug(f'QP right gained text: {qp_gained_text}')
+    qp_total_text = extract_text_from_image(image[481:481 + 38, 700:700 + 230], 'qp_right_total_text.png')
+    logging.debug(f'QP right total text: {qp_total_text}')
+
+    if qp_gained_text == -1 or qp_total_text == -1:
+        return -1, -1
+
+    qp_gained = get_qp_from_text(qp_gained_text)
+    qp_total = get_qp_from_text(qp_total_text)
+    
+    if qp_total == 0:
+        raise Exception("Failed to extract QP right total from text returned by tesseract")
+
+    return qp_gained, qp_total
 
 def get_scroll_bar_start_height(image):
     height, width, _ = image.shape
@@ -338,9 +358,10 @@ def analyze_image(image_path, templates, LABEL=False):
 
     mat_drops = countMats(targetImg, templates)
     qp_gained, qp_total = get_qp(targetImg)
+    qp_right_gained, qp_right_total = get_qp_right(targetImg)
     scroll_position = get_scroll_bar_start_height(targetImg)
     drop_count = get_drop_count(targetImg)
-    return { "qp_gained": qp_gained, "qp_total": qp_total, 'scroll_position': scroll_position, "drop_count": drop_count, "drops_found": len(mat_drops), "drops": mat_drops }
+    return { "qp_gained": qp_gained, "qp_total": qp_total, "qp_right_gained": qp_right_gained, "qp_right_total": qp_right_total, 'scroll_position': scroll_position, "drop_count": drop_count, "drops_found": len(mat_drops), "drops": mat_drops }
 
 def load_image(image_path):
     if not os.path.isfile(image_path):
