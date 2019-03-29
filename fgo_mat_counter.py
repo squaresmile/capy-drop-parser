@@ -36,8 +36,7 @@ BASE_WIDTH = 80
 BAD_APPLE_RESOLUTION = {
     # From https://ios-resolution.com/
     "iPad Pro 12.9": {2048, 2732},
-    "iPad Pro 10.5": {1668, 2224},
-    "iPad Pro 9.7": {1536, 2048},
+    "iPad Pro 11": {1668, 2388},
     "iPhone X": {1125, 2436},
     "iPhone XS Max": {1242, 2688},
     "iPhone XR": {826, 1792}
