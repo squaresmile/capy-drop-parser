@@ -35,12 +35,12 @@ BASE_WIDTH = 80
 
 BAD_APPLE_RESOLUTION = {
     # From https://ios-resolution.com/
-    "iPad Pro 12.9": (2048, 2732),
-    "iPad Pro 10.5": (1668, 2224),
-    "iPad Pro 9.7": (1536, 2048),
-    "iPhone X": (1125, 2436),
-    "iPhone XS Max": (1242, 2688),
-    "iPhone XR": (826, 1792)
+    "iPad Pro 12.9": {2048, 2732},
+    "iPad Pro 10.5": {1668, 2224},
+    "iPad Pro 9.7": {1536, 2048},
+    "iPhone X": {1125, 2436},
+    "iPhone XS Max": {1242, 2688},
+    "iPhone XR": {826, 1792}
 }
 
 def getOverlap(pt, ptList, distance=MIN_DISTANCE):
@@ -338,7 +338,7 @@ def analyze_image(image_path, templates=False):
     logging.info(f'Input aspect ratio is {aspect_ratio:.4f}, training ratio is {TRAINING_IMG_ASPECT_RATIO:.4f}')
     height, width, _ = targetImg.shape
 
-    if (height, width) in list(BAD_APPLE_RESOLUTION.values()):
+    if {height, width} in list(BAD_APPLE_RESOLUTION.values()):
         logging.info(f"Matched list of Apple devices with weird FGO layout")
         if abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
             targetImg = crop_black_edges(targetImg)
@@ -351,7 +351,7 @@ def analyze_image(image_path, templates=False):
         if abs(2.165 - get_aspect_ratio(targetImg)) < 0.1:
             targetImg = crop_side_and_bottom_blue_borders(targetImg)
 
-    elif abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.01:
+    elif abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
         targetImg = crop_16_9_borders(targetImg)
 
     # refresh channels
