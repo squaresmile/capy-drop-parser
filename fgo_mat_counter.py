@@ -33,13 +33,13 @@ OFFSET_WIDTH = 13
 BASE_HEIGHT = 22
 BASE_WIDTH = 80
 
-BAD_APPLE_RESOLUTION = {
-    # From https://ios-resolution.com/
-    "iPad Pro 12.9": {2048, 2732},
-    "iPad Pro 11": {1668, 2388},
-    "iPhone X": {1125, 2436},
-    "iPhone XS Max": {1242, 2688},
-    "iPhone XR": {826, 1792}
+WEIRD_APPLE_RESOLUTION = {
+    # https://developer.apple.com/design/human-interface-guidelines/ios/visual-design/adaptivity-and-layout/
+    "iPad Pro 12.9": {"resolution": {2048, 2732}, "crop": (295, 1761, 59, 2672)},
+    "iPad Pro 11": {"resolution": {1668, 2388}},
+    "iPhone X": {"resolution": {1125, 2436}, "crop": (0, 1061, 274, 2161)},
+    "iPhone XS Max": {"resolution": {1242, 2688}},
+    "iPhone XR": {"resolution": {828, 1792}, "crop": (0, 780, 202, 1589)}
 }
 
 def getOverlap(pt, ptList, distance=MIN_DISTANCE):
@@ -284,7 +284,7 @@ def extract_text_from_image(image, file_name='pytesseract_input.png'):
 
 
 def get_qp(image):
-    qp_gained_text = extract_text_from_image(image[435:435 + 38, 230:230 + 300], 'qp_gained_text.png')
+    qp_gained_text = extract_text_from_image(image[435:435 + 38, 240:240 + 290], 'qp_gained_text.png')
     logging.info(f'QP gained text: {qp_gained_text}')
     qp_total_text = extract_text_from_image(image[481:481 + 38, 212:212 + 282], 'qp_total_text.png')
     logging.info(f'QP total text: {qp_total_text}')
@@ -337,20 +337,25 @@ def analyze_image(image_path, templates=False):
     logging.info(f'Input aspect ratio is {aspect_ratio:.4f}, training ratio is {TRAINING_IMG_ASPECT_RATIO:.4f}')
     height, width, _ = targetImg.shape
 
-    if {height, width} in list(BAD_APPLE_RESOLUTION.values()):
-        logging.info(f"Matched list of Apple devices with weird FGO layout")
-        if abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
-            targetImg = crop_black_edges(targetImg)
+    for phone_info in WEIRD_APPLE_RESOLUTION.values():
+        if {height, width} == phone_info["resolution"]:
+            logging.info(f"Matched list of Apple devices with weird FGO layout")
+            if "crop" in phone_info:
+                top, bottom, left, right = phone_info["crop"]
+                targetImg = targetImg[top:bottom, left:right]
+            else:
+                if abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
+                    targetImg = crop_black_edges(targetImg)
 
-        # Aspect ratio of 1.3 causes FGO to add blue borders on the top and bottom
-        if abs(1.3 - get_aspect_ratio(targetImg)) < 0.1:
-            targetImg = crop_top_bottom_blue_borders(targetImg)
+                # Aspect ratio of 1.3 causes FGO to add blue borders on the top and bottom
+                if abs(1.3 - get_aspect_ratio(targetImg)) < 0.1:
+                    targetImg = crop_top_bottom_blue_borders(targetImg)
 
-        # Aspect ratio of 2.165 causes FGO to add blue borders to both sides and the bottom; at least on some devices.
-        if abs(2.165 - get_aspect_ratio(targetImg)) < 0.1:
-            targetImg = crop_side_and_bottom_blue_borders(targetImg)
+                # Aspect ratio of 2.165 causes FGO to add blue borders to both sides and the bottom; at least on some devices.
+                if abs(2.165 - get_aspect_ratio(targetImg)) < 0.1:
+                    targetImg = crop_side_and_bottom_blue_borders(targetImg)
 
-    elif abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
+    if abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
         targetImg = crop_16_9_borders(targetImg)
 
     # refresh channels
