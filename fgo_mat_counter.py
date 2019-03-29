@@ -33,6 +33,15 @@ OFFSET_WIDTH = 13
 BASE_HEIGHT = 22
 BASE_WIDTH = 80
 
+BAD_APPLE_RESOLUTION = {
+    # From https://ios-resolution.com/
+    "iPad Pro 12.9": (2048, 2732),
+    "iPad Pro 10.5": (1668, 2224),
+    "iPad Pro 9.7": (1536, 2048),
+    "iPhone X": (1125, 2436),
+    "iPhone XS Max": (1242, 2688),
+    "iPhone XR": (826, 1792)
+}
 
 def getOverlap(pt, ptList, distance=MIN_DISTANCE):
     row = pt[1]
@@ -188,6 +197,25 @@ def countMats(targetImg, templates):
     return drops
 
 
+def crop_16_9_borders(image):
+    height, width, _ = image.shape
+    aspect_ratio = width/height
+
+    if aspect_ratio < TRAINING_IMG_ASPECT_RATIO:
+        new_height = width / TRAINING_IMG_ASPECT_RATIO
+        adjustment = int((height - new_height) / 2)
+        image = image[adjustment:height - adjustment, 0:width]
+
+    elif aspect_ratio > TRAINING_IMG_ASPECT_RATIO:
+        new_width = height * TRAINING_IMG_ASPECT_RATIO
+        adjustment = int((width - new_width) / 2)
+        image = image[0:height, adjustment:width - adjustment]
+
+    if logging.getLogger().isEnabledFor(logging.DEBUG):
+        cv2.imwrite('post_16_9_crop.png', image)
+    return image
+
+
 def crop_top_bottom_blue_borders(image):
     height, width, _ = image.shape
     new_height = width / TRAINING_IMG_ASPECT_RATIO
@@ -308,16 +336,23 @@ def analyze_image(image_path, templates=False):
     # check if image H W ratio is off
     aspect_ratio = get_aspect_ratio(targetImg)
     logging.info(f'Input aspect ratio is {aspect_ratio:.4f}, training ratio is {TRAINING_IMG_ASPECT_RATIO:.4f}')
-    if abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
-        targetImg = crop_black_edges(targetImg)
+    height, width, _ = targetImg.shape
 
-    # Aspect ratio of 1.3 causes FGO to add blue borders on the top and bottom
-    if abs(1.3 - get_aspect_ratio(targetImg)) < 0.1:
-        targetImg = crop_top_bottom_blue_borders(targetImg)
+    if (height, width) in list(BAD_APPLE_RESOLUTION.values()):
+        logging.info(f"Matched list of Apple devices with weird FGO layout")
+        if abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.1:
+            targetImg = crop_black_edges(targetImg)
 
-    # Aspect ratio of 2.165 causes FGO to add blue borders to both sides and the bottom; at least on some devices.
-    if abs(2.165 - get_aspect_ratio(targetImg)) < 0.1:
-        targetImg = crop_side_and_bottom_blue_borders(targetImg)
+        # Aspect ratio of 1.3 causes FGO to add blue borders on the top and bottom
+        if abs(1.3 - get_aspect_ratio(targetImg)) < 0.1:
+            targetImg = crop_top_bottom_blue_borders(targetImg)
+
+        # Aspect ratio of 2.165 causes FGO to add blue borders to both sides and the bottom; at least on some devices.
+        if abs(2.165 - get_aspect_ratio(targetImg)) < 0.1:
+            targetImg = crop_side_and_bottom_blue_borders(targetImg)
+
+    elif abs(aspect_ratio - TRAINING_IMG_ASPECT_RATIO) > 0.01:
+        targetImg = crop_16_9_borders(targetImg)
 
     # refresh channels
     height, width, _ = targetImg.shape
