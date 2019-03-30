@@ -36,7 +36,7 @@ BASE_WIDTH = 80
 WEIRD_APPLE_RESOLUTION = {
     # https://developer.apple.com/design/human-interface-guidelines/ios/visual-design/adaptivity-and-layout/
     "iPad Pro 12.9": {"resolution": {2048, 2732}, "crop": (295, 1761, 59, 2672)},
-    "iPad Pro 11": {"resolution": {1668, 2388}},
+    "iPad Pro 11": {"resolution": {1668, 2388}, "crop": (248, 1427, 141, 2246)},
     "iPhone X": {"resolution": {1125, 2436}, "crop": (0, 1061, 274, 2161)},
     "iPhone XS Max": {"resolution": {1242, 2688}},
     "iPhone XR": {"resolution": {828, 1792}, "crop": (0, 780, 202, 1589)}
